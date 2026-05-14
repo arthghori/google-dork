@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Google Dork Generator — Security Research Tool</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f8f6;
+    --surface: #ffffff;
+    --surface2: #f2f1ee;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1917;
+    --text2: #6b6965;
+    --text3: #9a9895;
+    --accent: #1a1917;
+    --accent-fg: #ffffff;
+    --blue: #185FA5;
+    --blue-bg: #e6f1fb;
+    --green: #3B6D11;
+    --green-bg: #eaf3de;
+    --amber: #BA7517;
+    --amber-bg: #faeeda;
+    --red: #A32D2D;
+    --red-bg: #fcebeb;
+    --purple: #534AB7;
+    --purple-bg: #eeedfe;
+    --teal: #0F6E56;
+    --teal-bg: #e1f5ee;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --mono: 'Courier New', 'Lucida Console', monospace;
+    --sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 16px;
+  }
+  .header-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--red-bg);
+    color: var(--red);
+    border: 0.5px solid rgba(163,45,45,0.2);
+    font-weight: 500;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+  }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .hero h1 span { color: var(--blue); }
+  .hero p {
+    font-size: 15px;
+    color: var(--text2);
+    max-width: 520px;
+    margin: 0 auto 1.5rem;
+  }
+  .disclaimer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--amber-bg);
+    border: 0.5px solid rgba(186,117,23,0.25);
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--amber);
+  }
+
+  /* ── SEARCH PANEL ── */
+  .search-panel {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+    align-items: flex-end;
+  }
+  .inp-wrap { flex: 1; }
+  .inp-wrap label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .inp-wrap input[type="text"] {
+    width: 100%;
+    height: 42px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0 14px;
+    font-size: 14px;
+    font-family: var(--mono);
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .inp-wrap input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,0.1); }
+  .inp-wrap input[type="text"]::placeholder { color: var(--text3); font-family: var(--sans); }
+
+  .btn-primary {
+    height: 42px;
+    padding: 0 24px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: var(--sans);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ── MODE TABS ── */
+  .mode-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .mode-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-right: 4px;
+  }
+  .mode-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 0.5px solid var(--border2);
+    cursor: pointer;
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .mode-btn:hover { background: var(--surface2); }
+  .mode-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .stats-info { font-size: 13px; color: var(--text2); }
+  .stats-info strong { color: var(--text); font-weight: 600; }
+  .btn-sm {
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border2);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--sans);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.12s;
+  }
+  .btn-sm:hover { background: var(--surface2); }
+
+  /* ── TIPS BOX ── */
+  .tips-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .tips-box h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+  }
+  .tip-card {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+  }
+  .tip-card .tip-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .tip-card .tip-body {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.55;
+  }
+  .tip-card code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(0,0,0,0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  /* ── CUSTOM BUILDER ── */
+  .builder-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  .builder-box h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .op-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .op-chip {
+    padding: 4px 11px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border2);
+    font-size: 12px;
+    font-family: var(--mono);
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--text);
+    transition: all 0.12s;
+  }
+  .op-chip:hover { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+  .custom-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .custom-input-row input {
+    flex: 1;
+    height: 38px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0 12px;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+  }
+  .custom-input-row input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,0.1); }
+  .custom-preview {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 38px;
+    color: var(--text);
+    word-break: break-all;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .builder-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 1.25rem; }
+  .sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-bottom: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .sec-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sec-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .sec-badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.06);
+    color: var(--text2);
+    font-weight: 500;
+  }
+  .dork-list {
+    border: 0.5px solid var(--border);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .dork-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 0.5px solid var(--border);
+    transition: background 0.1s;
+  }
+  .dork-row:last-child { border-bottom: none; }
+  .dork-row:hover { background: var(--surface2); }
+  .dork-code {
+    flex: 1;
+    min-width: 0;
+  }
+  .dork-query {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.45;
+  }
+  .dork-note {
+    font-size: 10.5px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .op-hl { color: var(--blue); }
+  .val-hl { color: var(--green); }
+
+  .dork-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .act-btn {
+    padding: 4px 11px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border2);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .act-copy { color: var(--text2); }
+  .act-copy:hover { background: var(--surface2); color: var(--text); }
+  .act-search { color: var(--blue); border-color: rgba(24,95,165,0.3); }
+  .act-search:hover { background: var(--blue-bg); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text3);
+  }
+  .empty-state .big-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ── CATEGORY COLORS ── */
+  .cat-exposed .sec-icon { background: var(--amber-bg); color: var(--amber); }
+  .cat-login   .sec-icon { background: var(--blue-bg);  color: var(--blue);  }
+  .cat-creds   .sec-icon { background: var(--red-bg);   color: var(--red);   }
+  .cat-subapi  .sec-icon { background: var(--teal-bg);  color: var(--teal);  }
+  .cat-vulns   .sec-icon { background: var(--purple-bg);color: var(--purple);}
+  .cat-adv     .sec-icon { background: var(--surface2); color: var(--text2); }
+  .cat-osint   .sec-icon { background: var(--green-bg); color: var(--green); }
+  .cat-custom  .sec-icon { background: var(--amber-bg); color: var(--amber); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 12px;
+    color: var(--text3);
+    border-top: 0.5px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 1rem 1rem 3rem; }
+    .search-row { flex-direction: column; }
+    .btn-primary { width: 100%; justify-content: center; }
+    .hero h1 { font-size: 24px; }
+    .dork-actions { flex-direction: column; gap: 3px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">🔍</div>
+      DorkGen
+    </a>
+    <span class="header-badge">⚠ Authorized Use Only</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Google <span>Dork</span> Generator</h1>
+    <p>Enter a target domain and instantly generate hundreds of Google Dorks for Bug Bounty, Penetration Testing, OSINT & more.</p>
+    <span class="disclaimer">⚠ For authorized security research only. Always get written permission before testing.</span>
+  </div>
+
+  <!-- SEARCH PANEL -->
+  <div class="search-panel">
+    <div class="search-row">
+      <div class="inp-wrap">
+        <label for="domain">Target Domain</label>
+        <input type="text" id="domain" placeholder="example.com" autocomplete="off" spellcheck="false" />
+      </div>
+      <button class="btn-primary" onclick="generate()">⚡ Generate Dorks</button>
+    </div>
+    <div class="mode-row">
+      <span class="mode-label">Mode:</span>
+      <button class="mode-btn active" onclick="setMode(this,'all')">All</button>
+      <button class="mode-btn" onclick="setMode(this,'bugbounty')">🐛 Bug Bounty</button>
+      <button class="mode-btn" onclick="setMode(this,'pentest')">🔓 Pentest</button>
+      <button class="mode-btn" onclick="setMode(this,'osint')">👁 OSINT</button>
+      <button class="mode-btn" onclick="setMode(this,'ctf')">🏁 CTF / Learning</button>
+    </div>
+  </div>
+
+  <!-- MAIN OUTPUT -->
+  <div id="mainOutput">
+    <div class="empty-state">
+      <div class="big-icon">🎯</div>
+      <p>Enter a domain name above and click <strong>Generate Dorks</strong></p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  DorkGen — Google Dork Generator for Security Researchers &nbsp;·&nbsp; Use responsibly and legally.
+</footer>
+
+<script>
+  let currentMode = 'all';
+  let customDorks = [];
+  let lastDomain = '';
+
+  const CATEGORIES = [
+    {
+      key: 'exposed', cls: 'cat-exposed', label: 'Exposed Files & Directories', icon: '📂',
+      modes: ['all','bugbounty','pentest','ctf'],
+      dorks: d => [
+        { q:`site:${d} intitle:"index of"`,                              note:'Open directory listings' },
+        { q:`site:${d} intitle:"index of" "parent directory"`,           note:'Parent directory exposed' },
+        { q:`site:${d} ext:log`,                                         note:'Log files publicly accessible' },
+        { q:`site:${d} ext:bak OR ext:backup OR ext:old`,                note:'Backup files' },
+        { q:`site:${d} ext:sql`,                                         note:'SQL dump files' },
+        { q:`site:${d} ext:zip OR ext:tar OR ext:gz`,                    note:'Compressed archives' },
+        { q:`site:${d} ext:conf OR ext:config OR ext:cfg`,               note:'Configuration files' },
+        { q:`site:${d} ext:xml filetype:xml`,                            note:'XML files exposed' },
+        { q:`site:${d} ext:json`,                                        note:'JSON files exposed' },
+        { q:`site:${d} inurl:robots.txt ext:txt`,                        note:'robots.txt — reveals hidden paths' },
+        { q:`site:${d} ext:swp OR ext:swo`,                              note:'Vim swap files (source code)' },
+        { q:`site:${d} intitle:"index of" ext:php`,                      note:'PHP files in open dirs' },
+        { q:`site:${d} intitle:"directory listing"`,                     note:'Directory listing title' },
+      ]
+    },
+    {
+      key: 'login', cls: 'cat-login', label: 'Login Pages & Admin Panels', icon: '🔒',
+      modes: ['all','bugbounty','pentest'],
+      dorks: d => [
+        { q:`site:${d} inurl:admin`,                                     note:'Admin URLs' },
+        { q:`site:${d} inurl:login`,                                     note:'Login pages' },
+        { q:`site:${d} inurl:wp-admin`,                                  note:'WordPress admin panel' },
+        { q:`site:${d} inurl:dashboard`,                                 note:'Dashboard pages' },
+        { q:`site:${d} inurl:portal`,                                    note:'Portals & intranets' },
+        { q:`site:${d} inurl:cpanel`,                                    note:'cPanel login' },
+        { q:`site:${d} intitle:"admin panel"`,                           note:'Admin panel titles' },
+        { q:`site:${d} inurl:phpmyadmin`,                                note:'phpMyAdmin interface' },
+        { q:`site:${d} inurl:manager/html`,                              note:'Tomcat manager' },
+        { q:`site:${d} inurl:sign-in OR inurl:signin OR inurl:login.php`,note:'Sign-in variants' },
+        { q:`site:${d} intitle:"login" inurl:admin`,                     note:'Admin login pages' },
+        { q:`site:${d} inurl:controlpanel OR inurl:control-panel`,       note:'Control panel paths' },
+        { q:`site:${d} intitle:"Plesk" inurl:login`,                     note:'Plesk hosting panel' },
+      ]
+    },
+    {
+      key: 'creds', cls: 'cat-creds', label: 'Config & Credentials', icon: '🔑',
+      modes: ['all','bugbounty','pentest','ctf'],
+      dorks: d => [
+        { q:`site:${d} ext:env`,                                         note:'.env files — API keys & secrets' },
+        { q:`site:${d} "DB_PASSWORD" OR "DB_USER"`,                      note:'Database credentials exposed' },
+        { q:`site:${d} "api_key" OR "apikey" OR "api_secret"`,           note:'API keys in page source' },
+        { q:`site:${d} inurl:.git "config"`,                             note:'Git config leaks' },
+        { q:`site:${d} ext:yml "password"`,                              note:'YAML files with passwords' },
+        { q:`site:${d} filetype:xml "password"`,                         note:'XML password fields' },
+        { q:`site:${d} "secret_key" OR "SECRET_KEY"`,                   note:'Secret keys exposed' },
+        { q:`site:${d} "aws_access_key" OR "aws_secret"`,               note:'AWS credentials' },
+        { q:`site:${d} inurl:wp-config.php`,                             note:'WordPress config file' },
+        { q:`site:${d} "Authorization: Bearer"`,                         note:'Exposed Bearer tokens' },
+        { q:`site:${d} ext:pem OR ext:key`,                              note:'Private keys / certificates' },
+        { q:`site:${d} "PRIVATE KEY" filetype:txt`,                      note:'Private key in text files' },
+        { q:`site:${d} inurl:.htpasswd`,                                 note:'.htpasswd credential file' },
+      ]
+    },
+    {
+      key: 'subapi', cls: 'cat-subapi', label: 'Subdomains & APIs', icon: '🌐',
+      modes: ['all','bugbounty','osint','pentest'],
+      dorks: d => [
+        { q:`site:*.${d}`,                                               note:'All subdomains' },
+        { q:`site:*.${d} -www`,                                          note:'Subdomains (excluding www)' },
+        { q:`site:${d} inurl:api`,                                       note:'API endpoints' },
+        { q:`site:${d} inurl:v1 OR inurl:v2 OR inurl:v3`,               note:'Versioned API paths' },
+        { q:`site:${d} inurl:swagger`,                                   note:'Swagger API documentation' },
+        { q:`site:${d} inurl:graphql`,                                   note:'GraphQL endpoint' },
+        { q:`site:${d} inurl:rest OR inurl:api/v`,                       note:'REST API paths' },
+        { q:`site:${d} ext:wsdl OR ext:wadl`,                            note:'WSDL/WADL service definitions' },
+        { q:`site:${d} inurl:endpoint`,                                  note:'Generic endpoint URLs' },
+        { q:`site:${d} "x-api-key"`,                                     note:'X-API-Key references' },
+        { q:`site:${d} inurl:api/docs`,                                  note:'API documentation pages' },
+        { q:`site:${d} inurl:openapi.json OR inurl:api-spec`,            note:'OpenAPI specification files' },
+      ]
+    },
+    {
+      key: 'vulns', cls: 'cat-vulns', label: 'Vulnerabilities (SQLi, XSS, LFI...)', icon: '🐛',
+      modes: ['all','bugbounty','pentest','ctf'],
+      dorks: d => [
+        { q:`site:${d} inurl:"id=" OR inurl:"?id="`,                     note:'Potential SQL injection parameters' },
+        { q:`site:${d} inurl:"page=" OR inurl:"file="`,                  note:'Potential LFI parameters' },
+        { q:`site:${d} inurl:"redirect=" OR inurl:"url="`,               note:'Open redirect parameters' },
+        { q:`site:${d} inurl:"search=" OR inurl:"query="`,               note:'XSS-prone search parameters' },
+        { q:`site:${d} inurl:".php?cat="`,                               note:'PHP category param (SQLi)' },
+        { q:`site:${d} inurl:"cmd=" OR inurl:"exec="`,                   note:'Command injection parameters' },
+        { q:`site:${d} "error in your SQL syntax"`,                      note:'SQL error messages disclosed' },
+        { q:`site:${d} "Warning: mysql_"`,                               note:'MySQL PHP warning message' },
+        { q:`site:${d} inurl:"upload" filetype:php`,                     note:'File upload scripts' },
+        { q:`site:${d} inurl:"include=" OR inurl:"path="`,               note:'Path traversal candidates' },
+        { q:`site:${d} inurl:"action=" filetype:php`,                    note:'PHP action parameters' },
+        { q:`site:${d} inurl:"?debug=true" OR inurl:"?test=1"`,          note:'Debug mode enabled' },
+        { q:`site:${d} "ORA-" OR "PLS-" intext:error`,                  note:'Oracle DB errors exposed' },
+      ]
+    },
+    {
+      key: 'adv', cls: 'cat-adv', label: 'Advanced & Miscellaneous', icon: '⚙',
+      modes: ['all','bugbounty','pentest','osint','ctf'],
+      dorks: d => [
+        { q:`site:${d} "Powered by" intitle:"phpinfo"`,                  note:'PHPInfo page exposed' },
+        { q:`site:${d} intitle:"test page" OR "it works"`,               note:'Default / test pages' },
+        { q:`site:${d} inurl:debug OR inurl:trace`,                      note:'Debug/trace endpoints' },
+        { q:`site:${d} "Internal Server Error"`,                         note:'ISE pages revealing stack info' },
+        { q:`site:${d} ext:php intitle:"phpMyAdmin"`,                    note:'phpMyAdmin installs' },
+        { q:`site:${d} "Last modified" intitle:"index of"`,              note:'Directory listing with timestamps' },
+        { q:`site:${d} "Syntax error" OR "stack trace"`,                 note:'Stack traces & error messages' },
+        { q:`site:${d} inurl:shell OR inurl:cmd.php`,                    note:'Possible web shells' },
+        { q:`site:${d} intitle:"Welcome to" inurl:readme`,               note:'Default README pages' },
+        { q:`site:${d} "config.php" OR "configuration.php"`,             note:'Config files in URLs' },
+        { q:`site:${d} inurl:_vti_bin`,                                  note:'FrontPage Server Extensions' },
+        { q:`site:${d} intitle:"Apache Tomcat" "Apache Tomcat"`,        note:'Tomcat default page' },
+        { q:`site:${d} intext:"Powered by WordPress" inurl:xmlrpc.php`,  note:'WordPress XMLRPC endpoint' },
+      ]
+    },
+    {
+      key: 'osint', cls: 'cat-osint', label: 'OSINT & Recon', icon: '👁',
+      modes: ['all','osint','bugbounty'],
+      dorks: d => [
+        { q:`"${d}" site:linkedin.com`,                                  note:'Employees on LinkedIn' },
+        { q:`"${d}" site:github.com`,                                    note:'Code repositories mentioning domain' },
+        { q:`"${d}" site:pastebin.com`,                                  note:'Pastes mentioning domain' },
+        { q:`"${d}" site:trello.com`,                                    note:'Public Trello boards' },
+        { q:`"@${d}" site:twitter.com OR site:x.com`,                    note:'Domain mentioned on X/Twitter' },
+        { q:`"${d}" filetype:pdf`,                                       note:'PDF documents mentioning domain' },
+        { q:`"${d}" "phone" OR "address"`,                               note:'Contact information' },
+        { q:`"${d}" ext:xls OR ext:xlsx`,                                note:'Spreadsheets mentioning domain' },
+        { q:`cache:${d}`,                                                note:'Google cached version' },
+        { q:`related:${d}`,                                              note:'Related/similar websites' },
+        { q:`"${d}" site:glassdoor.com`,                                 note:'Employee reviews & org info' },
+        { q:`"${d}" site:reddit.com`,                                    note:'Reddit discussions' },
+        { q:`"${d}" site:shodan.io`,                                     note:'Shodan host references' },
+      ]
+    }
+  ];
+
+  const OPERATORS = [
+    { op:'site:',      hint:'Restrict results to a specific site' },
+    { op:'inurl:',     hint:'Keyword must appear in the URL' },
+    { op:'intitle:',   hint:'Keyword must appear in page title' },
+    { op:'intext:',    hint:'Keyword must appear in page body' },
+    { op:'filetype:',  hint:'Search for specific file type' },
+    { op:'ext:',       hint:'File extension filter' },
+    { op:'cache:',     hint:'Show Google cached version' },
+    { op:'"phrase"',   hint:'Exact phrase match' },
+    { op:'OR',         hint:'Match either term' },
+    { op:'-term',      hint:'Exclude a term' },
+    { op:'*',          hint:'Wildcard — any word' },
+    { op:'related:',   hint:'Find related/similar sites' },
+    { op:'before:',    hint:'Results before a date' },
+    { op:'after:',     hint:'Results after a date' },
+  ];
+
+  function setMode(el, mode) {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentMode = mode;
+    if (lastDomain) generate();
+  }
+
+  function highlight(q) {
+    return q
+      .replace(/(site:|inurl:|intitle:|intext:|filetype:|ext:|cache:|related:|before:|after:)/g,
+               '<span class="op-hl">$1</span>')
+      .replace(/"([^"]+)"/g,
+               '"<span class="val-hl">$1</span>"');
+  }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(() => btn.textContent = orig, 1400);
+    });
+  }
+
+  function searchGoogle(q) {
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+  }
+
+  function buildOpGrid(d) {
+    const grid = document.getElementById('opGrid');
+    grid.innerHTML = OPERATORS.map(({ op, hint }) => {
+      const safe = op.replace(/"/g, '&quot;');
+      return `<button class="op-chip" title="${hint}" onclick="appendOp(this)"
+        data-op="${safe}" data-domain="${d}">${safe}</button>`;
+    }).join('');
+
+    document.getElementById('customInput').oninput = function () {
+      const preview = document.getElementById('customPreview');
+      preview.innerHTML = this.value ? highlight(this.value) : '<span style="color:var(--text3)">Your dork preview appears here...</span>';
+    };
+  }
+
+  function appendOp(btn) {
+    const inp = document.getElementById('customInput');
+    let op = btn.dataset.op;
+    if (op === 'site:') op = `site:${btn.dataset.domain} `;
+    if (op === '"phrase"') {
+      inp.value += '""';
+      const pos = inp.value.length - 1;
+      inp.focus();
+      inp.setSelectionRange(pos, pos);
+    } else {
+      inp.value += op;
+      inp.focus();
+    }
+    document.getElementById('customPreview').innerHTML = highlight(inp.value);
+  }
+
+  function clearCustom() {
+    document.getElementById('customInput').value = '';
+    document.getElementById('customPreview').innerHTML = '<span style="color:var(--text3)">Your dork preview appears here...</span>';
+  }
+
+  function addCustomDork() {
+    const q = document.getElementById('customInput').value.trim();
+    if (!q) { alert('Please enter a dork query first.'); return; }
+    customDorks.push(q);
+    clearCustom();
+    if (lastDomain) generate(true);
+  }
+
+  function searchCustom() {
+    const q = document.getElementById('customInput').value.trim();
+    if (q) searchGoogle(q);
+  }
+
+  function copyAll() {
+    const d = lastDomain;
+    if (!d) return;
+    let all = [];
+    CATEGORIES.forEach(cat => {
+      if (cat.modes.includes(currentMode) || currentMode === 'all') {
+        cat.dorks(d).forEach(({ q }) => all.push(q));
+      }
+    });
+    customDorks.forEach(q => all.push(q));
+    navigator.clipboard.writeText(all.join('\n')).then(() => {
+      const btn = document.getElementById('copyAllBtn');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied All!';
+      setTimeout(() => btn.textContent = orig, 1600);
+    });
+  }
+
+  function exportTxt() {
+    const d = lastDomain;
+    if (!d) return;
+    let lines = [`# Google Dork Report — ${d}`, `# Generated: ${new Date().toLocaleString()}`, `# Mode: ${currentMode}`, ''];
+    CATEGORIES.forEach(cat => {
+      if (cat.modes.includes(currentMode) || currentMode === 'all') {
+        lines.push(`## ${cat.label}`);
+        cat.dorks(d).forEach(({ q, note }) => lines.push(`${q}   # ${note}`));
+        lines.push('');
+      }
+    });
+    if (customDorks.length) {
+      lines.push('## My Custom Dorks');
+      customDorks.forEach(q => lines.push(q));
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `dorks-${d}-${Date.now()}.txt`;
+    a.click();
+  }
+
+  function generate(preserveScroll) {
+    const raw = document.getElementById('domain').value.trim();
+    const d = raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+    if (!d) { alert('Please enter a valid domain name (e.g. example.com)'); return; }
+    lastDomain = d;
+
+    const builder = document.getElementById('builder');
+    builder.style.display = 'block';
+    buildOpGrid(d);
+
+    let sections = '';
+    let total = 0;
+
+    // Tips
+    const tips = `
+    <div class="tips-box">
+      <h3>💡 Dork-Building Tips</h3>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-title">Stack operators</div>
+          <div class="tip-body">Combine multiple operators to narrow results:<br><code>site:${d} inurl:admin ext:php</code></div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-title">Use wildcards</div>
+          <div class="tip-body"><code>site:*.${d}</code> finds all subdomains. <code>filetype:* inurl:backup</code> finds any backup file.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-title">Exclude noise</div>
+          <div class="tip-body">Use <code>-inurl:blog -inurl:news</code> to filter irrelevant pages from results.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-title">Exact strings</div>
+          <div class="tip-body">Quotes find exact matches in source: <code>"password="</code> or <code>"api_key"</code>.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-title">Date filtering</div>
+          <div class="tip-body">Limit results: <code>after:2024-01-01</code> or <code>before:2023-12-31</code> for recent findings.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-title">OR for variants</div>
+          <div class="tip-body"><code>inurl:admin OR inurl:login OR inurl:panel</code> to catch multiple endpoint names at once.</div>
+        </div>
+      </div>
+    </div>`;
+
+    CATEGORIES.forEach(cat => {
+      if (!cat.modes.includes(currentMode) && currentMode !== 'all') return;
+      const dorks = cat.dorks(d);
+      total += dorks.length;
+      sections += `<div class="section ${cat.cls}">
+        <div class="sec-head">
+          <div class="sec-title">
+            <div class="sec-icon">${cat.icon}</div>
+            ${cat.label}
+          </div>
+          <span class="sec-badge">${dorks.length} dorks</span>
+        </div>
+        <div class="dork-list">
+          ${dorks.map(({ q, note }) => `
+          <div class="dork-row">
+            <div class="dork-code">
+              <div class="dork-query">${highlight(q)}</div>
+              <div class="dork-note">${note}</div>
+            </div>
+            <div class="dork-actions">
+              <button class="act-btn act-copy" onclick="copyText('${q.replace(/'/g, "\\'")}',this)">Copy</button>
+              <button class="act-btn act-search" onclick="searchGoogle('${q.replace(/'/g, "\\'")}')">↗ Search</button>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    });
+
+    if (customDorks.length) {
+      sections += `<div class="section cat-custom">
+        <div class="sec-head">
+          <div class="sec-title"><div class="sec-icon">⭐</div>My Custom Dorks</div>
+          <span class="sec-badge">${customDorks.length}</span>
+        </div>
+        <div class="dork-list">
+          ${customDorks.map(q => `
+          <div class="dork-row">
+            <div class="dork-code">
+              <div class="dork-query">${highlight(q)}</div>
+            </div>
+            <div class="dork-actions">
+              <button class="act-btn act-copy" onclick="copyText('${q.replace(/'/g, "\\'")}',this)">Copy</button>
+              <button class="act-btn act-search" onclick="searchGoogle('${q.replace(/'/g, "\\'")}')">↗ Search</button>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    const statsBar = `
+    <div class="stats-bar">
+      <span class="stats-info">Generated <strong>${total + customDorks.length} dorks</strong> for <strong>${d}</strong></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" id="copyAllBtn" onclick="copyAll()">📋 Copy All</button>
+        <button class="btn-sm" onclick="exportTxt()">⬇ Export .txt</button>
+      </div>
+    </div>`;
+
+    document.getElementById('mainOutput').innerHTML = statsBar + tips + sections;
+  }
+
+  // Enter key support
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('domain').addEventListener('keydown', e => {
+      if (e.key === 'Enter') generate();
+    });
+  });
+</script>
+
+<!-- CUSTOM BUILDER (hidden until generate is clicked) -->
+<div class="container" style="padding-top:0">
+  <div class="builder-box" id="builder">
+    <h3>🛠 Custom Dork Builder</h3>
+    <div class="op-chips" id="opGrid"></div>
+    <div class="custom-input-row">
+      <input type="text" id="customInput" placeholder="Click operators above or type your custom dork here..." autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="custom-preview" id="customPreview">
+      <span style="color:var(--text3)">Your dork preview appears here...</span>
+    </div>
+    <div class="builder-actions">
+      <button class="btn-sm" onclick="clearCustom()">🗑 Clear</button>
+      <button class="btn-sm" onclick="addCustomDork()">+ Add to My Dorks</button>
+      <button class="btn-sm" onclick="searchCustom()">↗ Search on Google</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
