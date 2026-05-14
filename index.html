@@ -437,7 +437,7 @@
     color: var(--text3);
     margin-top: 2px;
   }
-  .op-hl { color: var(--blue); }
+  .op-hl { color: var(--blue); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; font-weight: 500; }
   .val-hl { color: var(--green); }
 
   .dork-actions { display: flex; gap: 5px; flex-shrink: 0; }
@@ -538,6 +538,7 @@
       <button class="mode-btn" onclick="setMode(this,'pentest')">🔓 Pentest</button>
       <button class="mode-btn" onclick="setMode(this,'osint')">👁 OSINT</button>
       <button class="mode-btn" onclick="setMode(this,'ctf')">🏁 CTF / Learning</button>
+      <button class="mode-btn"><a href="#customBuilderContainer" style="text-decoration: none; color: inherit;">🛠 Custom Builder</a></button>
     </div>
   </div>
 
@@ -549,7 +550,27 @@
     </div>
   </div>
 
+  <div style="padding-top:0" id="customBuilderContainer">
+  <div class="builder-box" id="builder">
+    <h3>🛠 Custom Dork Builder</h3>
+    <div class="op-chips" id="opGrid"></div>
+    <div class="custom-input-row">
+      <input type="text" id="customInput" placeholder="Click operators above or type your custom dork here..." autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="custom-preview" id="customPreview">
+      <span style="color:var(--text3)">Your dork preview appears here...</span>
+    </div>
+    <div class="builder-actions">
+      <button class="btn-sm" onclick="clearCustom()">🗑 Clear</button>
+      <button class="btn-sm" onclick="addCustomDork()">+ Add to My Dorks</button>
+      <button class="btn-sm" onclick="searchCustom()">↗ Search on Google</button>
+    </div>
+  </div>
 </div>
+</div>
+
+<!-- CUSTOM BUILDER (hidden until generate is clicked) -->
+
 
 <footer>
   DorkLab Google Dork Generator for Security Researchers &nbsp;·&nbsp; Use responsibly and legally.
@@ -721,23 +742,31 @@
   }
 
   function highlight(q) {
-    return q
-      .replace(/(site:|inurl:|intitle:|intext:|filetype:|ext:|cache:|related:|before:|after:)/g,
-               '<span class="op-hl">$1</span>')
+    const div = document.createElement('div');
+    div.textContent = q;
+    let html = div.innerHTML;
+    html = html.replace(/(site:|inurl:|intitle:|intext:|filetype:|ext:|cache:|related:|before:|after:)/g,
+             '<span class="op-hl">$1</span>')
       .replace(/"([^"]+)"/g,
                '"<span class="val-hl">$1</span>"');
+    return html;
   }
 
-  function copyText(text, btn) {
+  function copyText(btn) {
+    const text = btn.getAttribute('data-query');
     navigator.clipboard.writeText(text).then(() => {
       const orig = btn.textContent;
       btn.textContent = '✓ Copied';
       setTimeout(() => btn.textContent = orig, 1400);
+    }).catch(err => {
+      console.error('Copy failed:', err);
+      alert('Failed to copy. Please try again.');
     });
   }
 
-  function searchGoogle(q) {
-    window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+  function searchGoogle(btn) {
+    const q = btn.getAttribute('data-query');
+    if (q) window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
   }
 
   function buildOpGrid(d) {
@@ -886,17 +915,20 @@
           <span class="sec-badge">${dorks.length} dorks</span>
         </div>
         <div class="dork-list">
-          ${dorks.map(({ q, note }) => `
+          ${dorks.map(({ q, note }) => {
+            const safeQ = q.replace(/"/g, '&quot;');
+            return `
           <div class="dork-row">
             <div class="dork-code">
               <div class="dork-query">${highlight(q)}</div>
               <div class="dork-note">${note}</div>
             </div>
             <div class="dork-actions">
-              <button class="act-btn act-copy" onclick="copyText('${q.replace(/'/g, "\\'")}',this)">Copy</button>
-              <button class="act-btn act-search" onclick="searchGoogle('${q.replace(/'/g, "\\'")}')">↗ Search</button>
+              <button class="act-btn act-copy" data-query="${safeQ}" onclick="copyText(this)">Copy</button>
+              <button class="act-btn act-search" data-query="${safeQ}" onclick="searchGoogle(this)">↗ Search</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+          }).join('')}
         </div>
       </div>`;
     });
@@ -908,16 +940,19 @@
           <span class="sec-badge">${customDorks.length}</span>
         </div>
         <div class="dork-list">
-          ${customDorks.map(q => `
+          ${customDorks.map(q => {
+            const safeQ = q.replace(/"/g, '&quot;');
+            return `
           <div class="dork-row">
             <div class="dork-code">
               <div class="dork-query">${highlight(q)}</div>
             </div>
             <div class="dork-actions">
-              <button class="act-btn act-copy" onclick="copyText('${q.replace(/'/g, "\\'")}',this)">Copy</button>
-              <button class="act-btn act-search" onclick="searchGoogle('${q.replace(/'/g, "\\'")}')">↗ Search</button>
+              <button class="act-btn act-copy" data-query="${safeQ}" onclick="copyText(this)">Copy</button>
+              <button class="act-btn act-search" data-query="${safeQ}" onclick="searchGoogle(this)">↗ Search</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+          }).join('')}
         </div>
       </div>`;
     }
@@ -942,24 +977,6 @@
   });
 </script>
 
-<!-- CUSTOM BUILDER (hidden until generate is clicked) -->
-<div class="container" style="padding-top:0">
-  <div class="builder-box" id="builder">
-    <h3>🛠 Custom Dork Builder</h3>
-    <div class="op-chips" id="opGrid"></div>
-    <div class="custom-input-row">
-      <input type="text" id="customInput" placeholder="Click operators above or type your custom dork here..." autocomplete="off" spellcheck="false" />
-    </div>
-    <div class="custom-preview" id="customPreview">
-      <span style="color:var(--text3)">Your dork preview appears here...</span>
-    </div>
-    <div class="builder-actions">
-      <button class="btn-sm" onclick="clearCustom()">🗑 Clear</button>
-      <button class="btn-sm" onclick="addCustomDork()">+ Add to My Dorks</button>
-      <button class="btn-sm" onclick="searchCustom()">↗ Search on Google</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
